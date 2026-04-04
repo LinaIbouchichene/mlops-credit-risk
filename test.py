@@ -1,40 +1,48 @@
+import os
+import joblib
+import numpy as np
+from preprocess import preprocess_data
 
-from sklearn.exceptions import NotFittedError
-import pandas as pd
-from sklearn.model_selection import train_test_split
+# Charger les données
+X_train, X_test, y_train, y_test, cols = preprocess_data("Loan_Data.csv")
 
-def test_model(model, X_test, y_test, name="Model"):
+# Chemin du dossier des modèles
+models_path = os.path.join(os.getcwd(), "models")
+
+# Définir modèles et thresholds
+models_info = {
+    "Logistic_Regression": {"file": "Logistic_Regression_model.joblib", "threshold": 0.6},
+    "Decision_Tree": {"file": "Decision_Tree_model.joblib", "threshold": 0.7},
+    "Random_Forest": {"file": "Random_Forest_model.joblib", "threshold": 0.75},
+}
+
+# Fonction de test rapide
+def quick_test_model(y_pred, expected, name="Model"):
     try:
-        # Vérification que le modèle peut faire des prédictions
-        if hasattr(model, "predict_proba"):
-            y_pred = (model.predict_proba(X_test)[:, 1] >= 0.5).astype(int)
+        if y_pred[0] == expected:
+            print(f"{name}: Prediction correct ✅")
         else:
-            y_pred = model.predict(X_test)
-        
-        # Vérification dimensions
-        assert y_pred.shape[0] == y_test.shape[0], "Taille des prédictions différente du test set"
-        
-        # Vérification valeurs
-        assert set(y_pred).issubset({0, 1}), "Prédictions non binaires détectées"
-        
-        print(f"✅ {name}: Test réussi, prédictions correctes")
-    except NotFittedError:
-        print(f"❌ {name}: Le modèle n'a pas été entraîné")
-    except AssertionError as e:
-        print(f"❌ {name}: Test incorrect - {e}")
-    except Exception as e:
-        print(f"❌ {name}: Erreur inattendue - {e}")
+            print(f"{name}: Prediction incorrect ❌")
+    except Exception:
+        print(f"{name}: Prediction incorrect ❌")
 
-# Tests pour chacun des modèles
-print("🔹 Test modèle Decision Tree")
-test_model(model=model, X_test=X_test, y_test=y_test, name="Decision Tree")
-
-print("🔹 Test modèle Random Forest")
-test_model(model=model, X_test=X_test, y_test=y_test, name="Random Forest")
-
-# Si tu avais un troisième modèle, exemple Régression Logistique
-from sklearn.linear_model import LogisticRegression
-log_model = LogisticRegression()
-log_model.fit(X_train, y_train)  # entraînement rapide
-print("🔹 Test modèle Logistic Regression")
-test_model(model=log_model, X_test=X_test, y_test=y_test, name="Logistic Regression")
+# Boucle pour tester tous les modèles
+for model_name, info in models_info.items():
+    model_file = os.path.join(models_path, info["file"])
+    
+    if not os.path.exists(model_file):
+        print(f"❌ Le modèle {model_name} n'existe pas : {model_file}")
+        continue
+    
+    # Charger le modèle
+    model = joblib.load(model_file)
+    
+    # Calcul des prédictions
+    if hasattr(model, "predict_proba"):
+        threshold = info["threshold"]
+        y_pred = (model.predict_proba(X_test)[:, 1] >= threshold).astype(int)
+    else:
+        y_pred = model.predict(X_test)
+    
+    # Tester
+    quick_test_model(y_pred, expected=y_test.iloc[0], name=model_name)
