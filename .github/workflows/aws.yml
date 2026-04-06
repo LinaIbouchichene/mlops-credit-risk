@@ -2,15 +2,15 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "develop1" ]
+    branches: [ "develop" ] # Se déclenche uniquement sur un push dans 'develop'
 
 env:
-  AWS_REGION: eu-west-3
-  ECR_REPOSITORY: kamilakare/mlops
-  ECS_SERVICE: mlops_service
-  ECS_CLUSTER: MlopsCluster
-  ECS_TASK_DEFINITION: mlops_catboost
-  CONTAINER_NAME: mlops_catboost
+  AWS_REGION: eu-west-3                   # Région Paris
+  ECR_REPOSITORY: lina/mlops-credit-risk  # Le nom du dossier sur AWS ECR
+  ECS_SERVICE: mlops_service              # Nom du service sur AWS ECS
+  ECS_CLUSTER: MlopsCluster               # Nom du cluster sur AWS ECS
+  ECS_TASK_DEFINITION: mlops_catboost     # Nom de la tâche sur AWS ECS
+  CONTAINER_NAME: mlops_catboost          # Nom du conteneur dans la tâche
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-3
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
@@ -42,7 +42,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # MODIFIÉ : Ajout du chemin vers le Dockerfile (-f pipeline/Dockerfile)
+        # On construit l'image Docker en utilisant le Dockerfile dans le dossier pipeline
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f pipeline/Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
