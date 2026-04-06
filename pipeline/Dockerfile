@@ -2,14 +2,13 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# 1. On copie d'abord SEULEMENT le requirements.txt
+# 1. Copie et installe les dépendances (le fichier est maintenant à la racine)
 COPY requirements.txt .
-
-# 2. On installe les dépendances (Docker garde ça en cache)
-FROM python:3.10-slim
-WORKDIR /app
-COPY . /app/
-
-RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+
+# 2. Copie le reste du code
+COPY pipeline/ .
+COPY models/ ./models/
+
+# 3. Lance l'app (on est dans /app, donc appml.py est à la racine du conteneur)
 CMD ["python", "appml.py"]
