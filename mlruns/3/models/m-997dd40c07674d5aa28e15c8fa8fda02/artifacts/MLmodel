@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/sarah/OneDrive/Bureau/DU DATA ANALYTICS/MLops/mlruns/3/models/m-997dd40c07674d5aa28e15c8fa8fda02/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.12
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.10.1
+model_id: m-997dd40c07674d5aa28e15c8fa8fda02
+model_size_bytes: 1714381
+model_uuid: m-997dd40c07674d5aa28e15c8fa8fda02
+prompts: null
+run_id: 471c460d04b0419b868b37090d8c0f39
+utc_time_created: '2026-04-03 15:43:50.626906'
