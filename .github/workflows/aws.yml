@@ -2,31 +2,28 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "develop" ] # Se déclenche uniquement sur un push dans 'develop'
+    branches:
+      - Mlflow-appli  # On cible uniquement cette branche
 
 env:
   AWS_REGION: eu-west-3                   # Région Paris
-  ECR_REPOSITORY: lina/mlops-credit-risk  # Le nom du dossier sur AWS ECR
-  ECS_SERVICE: mlops_service              # Nom du service sur AWS ECS
-  ECS_CLUSTER: MlopsCluster               # Nom du cluster sur AWS ECS
-  ECS_TASK_DEFINITION: mlops_catboost     # Nom de la tâche sur AWS ECS
-  CONTAINER_NAME: mlops_catboost          # Nom du conteneur dans la tâche
-
-permissions:
-  contents: read
+  ECR_REPOSITORY: ml/pps                  # Ton dépôt ECR
+  ECS_SERVICE: mlops_service              # Ton service ECS
+  ECS_CLUSTER: Cluster MlopsCluster       # Ton cluster ECS
+  CONTAINER_NAME: mlops_catboost          # Nom du conteneur dans la Task Definition
+  TASK_DEFINITION_NAME: mlops_catboost    # Nom de ta famille de tâche (Family)
 
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -42,16 +39,16 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # On construit l'image Docker en utilisant le Dockerfile dans le dossier pipeline
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f pipeline/Dockerfile .
+        # Le Dockerfile est à la racine de ta branche Mlflow-appli
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-        
-    - name: Download task definition
+
+    - name: Download current task definition
       run: |
-          aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-          --query "taskDefinition | {containerDefinitions: containerDefinitions, family: family, executionRoleArn: executionRoleArn, taskRoleArn: taskRoleArn, networkMode: networkMode, requiresCompatibilities: requiresCompatibilities, cpu: cpu, memory: memory}" \
-          > task-definition.json
+        aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_NAME }} \
+        --query "taskDefinition | {containerDefinitions: containerDefinitions, family: family, executionRoleArn: executionRoleArn, taskRoleArn: taskRoleArn, networkMode: networkMode, requiresCompatibilities: requiresCompatibilities, cpu: cpu, memory: memory}" \
+        > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
