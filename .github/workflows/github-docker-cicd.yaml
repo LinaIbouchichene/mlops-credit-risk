@@ -10,7 +10,7 @@ env:
   ECS_SERVICE: credit-risk-service
   ECS_CLUSTER: cluster-credit-risk
   ECS_TASK_DEFINITION: credit-risk-task
-  CONTAINER_NAME: streamlit-app
+  CONTAINER_NAME: streamlit-container # CORRIGÉ : Nom exact trouvé sur ta console AWS
 
 permissions:
   contents: read
@@ -42,8 +42,8 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Correction majeure : on pointe vers le dossier pipeline pour trouver le Dockerfile
-        # Le "." à la fin est crucial pour que Docker voit tout ton projet
+        # On utilise -f pour pointer le Dockerfile dans le dossier pipeline
+        # Le "." final inclut tout le projet (modèles, appml.py, etc.)
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f pipeline/Dockerfile .
         
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
