@@ -1,0 +1,4 @@
+pandas
+numpy
+mlflow==3.10.1
+flask
