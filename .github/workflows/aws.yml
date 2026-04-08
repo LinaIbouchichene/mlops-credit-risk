@@ -2,6 +2,7 @@ name: Deploy to Amazon ECS
 
 on:
   push:
+<<<<<<< HEAD
     branches:
       - Mlflow-appli  # On cible uniquement cette branche
 
@@ -12,6 +13,20 @@ env:
   ECS_CLUSTER: Cluster MlopsCluster       # Ton cluster ECS
   CONTAINER_NAME: mlops_catboost          # Nom du conteneur dans la Task Definition
   TASK_DEFINITION_NAME: mlops_catboost    # Nom de ta famille de tâche (Family)
+=======
+    branches: [ "develop" ] # Se déclenche quand tu pousses ton code sur 'develop'
+
+env:
+  AWS_REGION: eu-west-3                   # Région Paris
+  ECR_REPOSITORY: credit-risk-app         # Le nom de ton dépôt ECR
+  ECS_SERVICE: credit-risk-service        # Le nom du service ECS
+  ECS_CLUSTER: cluster-credit-risk        # Le nom du cluster ECS
+  ECS_TASK_DEFINITION: credit-risk-task   # Le nom de la famille de tâche
+  CONTAINER_NAME: streamlit-app           # Le nom du conteneur défini dans la tâche
+
+permissions:
+  contents: read
+>>>>>>> develop1
 
 jobs:
   deploy:
@@ -23,7 +38,11 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
+<<<<<<< HEAD
       uses: aws-actions/configure-aws-credentials@v2
+=======
+      uses: aws-actions/configure-aws-credentials@v4 # Version mise à jour
+>>>>>>> develop1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -31,7 +50,7 @@ jobs:
 
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
@@ -39,14 +58,27 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
+<<<<<<< HEAD
         # Le Dockerfile est à la racine de ta branche Mlflow-appli
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+=======
+        # Build du conteneur
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        # Push vers AWS
+>>>>>>> develop1
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        # On transmet l'URL de l'image à l'étape suivante
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+<<<<<<< HEAD
     - name: Download current task definition
       run: |
         aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_NAME }} \
+=======
+    - name: Download task definition
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+>>>>>>> develop1
         --query "taskDefinition | {containerDefinitions: containerDefinitions, family: family, executionRoleArn: executionRoleArn, taskRoleArn: taskRoleArn, networkMode: networkMode, requiresCompatibilities: requiresCompatibilities, cpu: cpu, memory: memory}" \
         > task-definition.json
 
@@ -59,7 +91,7 @@ jobs:
         image: ${{ steps.build-image.outputs.image }}
 
     - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ env.ECS_SERVICE }}
