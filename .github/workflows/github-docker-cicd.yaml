@@ -2,7 +2,7 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "aws" ] # Se déclenche sur la branche où tu travailles actuellement
+    branches: [ "aws" ] # Se déclenche dès que tu pousses sur la branche aws
 
 env:
   AWS_REGION: eu-west-3
@@ -42,8 +42,10 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Correction : On cible le Dockerfile dans le dossier pipeline
+        # Correction majeure : on pointe vers le dossier pipeline pour trouver le Dockerfile
+        # Le "." à la fin est crucial pour que Docker voit tout ton projet
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f pipeline/Dockerfile .
+        
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
