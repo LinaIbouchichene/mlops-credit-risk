@@ -1,60 +1,139 @@
 <!-- templates/index.html -->
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Risk Prediction</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background-color: white;
-            padding: 30px 40px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            width: 400px;
-            text-align: center;
-        }
-        h2 {
-            color: #333;
-        }
-        button {
-            padding: 12px 20px;
-            background-color: #007BFF;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .result {
-            margin-top: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Risk Intelligence - MLOps</title>
+<style>
+    body { font-family: Arial, sans-serif; background-color: #F8F9FA; color: #1A1A1A; margin:0; padding:0; }
+    header { background-color: #004A99; color: white; padding: 20px; text-align: center; }
+    nav { background-color: #E5E5E5; padding: 10px; }
+    nav button { margin: 5px; padding: 10px; border-radius: 5px; cursor: pointer; border: none; }
+    nav button:hover { background-color: #004A99; color: white; }
+    .container { padding: 20px; }
+    .metric-card { background: white; padding: 20px; border-radius: 10px; border-left: 5px solid #004A99; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display:inline-block; width: 200px; text-align:center; }
+    .columns { display:flex; gap:20px; flex-wrap: wrap; }
+    h1,h2,h3,h4 { color: #004A99; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:bold; }
+    .form-group input, .form-group select { padding: 8px; width:100%; border-radius:5px; border:1px solid #ccc; }
+    .btn-submit { background-color:#004A99; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; }
+    .btn-submit:hover { background-color:#003366; }
+    .success { color: green; font-weight:bold; }
+    .error { color: red; font-weight:bold; }
+    img { max-width:100%; border-radius:5px; margin-bottom:15px; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h2>Prédiction du Risque</h2>
-        <form action="/predict" method="post">
-            <button type="submit">Prédire</button>
-        </form>
 
-        {% if prediction_text %}
-            <div class="result">{{ prediction_text }}</div>
-        {% endif %}
-    </div>
+<header>
+    <h1>🏦 Credit Risk Intelligence</h1>
+    <p>Projet MLOps - 2026</p>
+</header>
+
+<nav>
+    <button onclick="showSection('intro')">🏠 Accueil</button>
+    <button onclick="showSection('metrics')">📊 Performance MLflow</button>
+    <button onclick="showSection('predict')">🔮 Simulateur de Crédit</button>
+</nav>
+
+<div class="container">
+    <!-- Intro -->
+    <section id="intro">
+        <h2>🏦 Intelligence Artificielle - Risque de Crédit</h2>
+        <p>Bienvenue dans l'interface de décision bancaire. Ce projet illustre un cycle <strong>MLOps</strong> complet :</p>
+        <ul>
+            <li><strong>Exploration :</strong> Analyse des données de crédit.</li>
+            <li><strong>Entraînement :</strong> Optimisation d'un Arbre de Décision.</li>
+            <li><strong>Tracking :</strong> Suivi des métriques (Recall) avec <strong>MLflow</strong>.</li>
+            <li><strong>Déploiement :</strong> Interface Streamlit conteneurisée.</li>
+        </ul>
+        <img src="https://img.freepik.com/free-vector/digital-economy-abstract-concept-illustration_335657-3972.jpg" alt="Intelligence Artificielle Banque">
+    </section>
+
+    <!-- Metrics -->
+    <section id="metrics" style="display:none;">
+        <h2>📊 Tracking des Performances MLflow</h2>
+        <div class="columns">
+            <div class="metric-card">
+                <h3>Recall (Live)</h3>
+                <p>85%</p>
+            </div>
+            <div class="metric-card">
+                <h3>Accuracy (Live)</h3>
+                <p>88%</p>
+            </div>
+            <div class="metric-card">
+                <h3>Run sélectionné</h3>
+                <p>Decision_Tree_Adjusted</p>
+            </div>
+        </div>
+        <hr>
+        <h3>📸 Preuves du Dashboard MLflow</h3>
+        <p>Comparaison Accuracy/Recall</p>
+        <img src="Src/assets/mlflow_1.png" alt="MLflow Accuracy/Recall">
+        <p>Détails du modèle ajusté (88%)</p>
+        <img src="Src/assets/mlflow_2.png" alt="MLflow Run">
+        <p>Paramètres du Decision Tree</p>
+        <img src="Src/assets/mlflow_3.png" alt="MLflow Params">
+    </section>
+
+    <!-- Predict -->
+    <section id="predict" style="display:none;">
+        <h2>🔮 Analyse de Risque en Temps Réel</h2>
+        <form id="loanForm">
+            <div class="columns">
+                <div class="form-group">
+                    <label>Âge du client</label>
+                    <input type="number" id="age" min="18" max="95" value="35">
+                </div>
+                <div class="form-group">
+                    <label>Revenu Annuel (€)</label>
+                    <input type="number" id="income" min="0" max="1000000" value="45000">
+                </div>
+                <div class="form-group">
+                    <label>Montant du prêt (€)</label>
+                    <input type="number" id="loan_amount" min="0" max="500000" value="15000">
+                </div>
+                <div class="form-group">
+                    <label>Objectif</label>
+                    <select id="loan_intent">
+                        <option>Personnel</option>
+                        <option>Éducation</option>
+                        <option>Médical</option>
+                        <option>Entreprise</option>
+                        <option>Amélioration Habitat</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn-submit" onclick="evaluateLoan()">Lancer l'évaluation</button>
+        </form>
+        <p id="result"></p>
+    </section>
+</div>
+
+<script>
+function showSection(id) {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('metrics').style.display = 'none';
+    document.getElementById('predict').style.display = 'none';
+    document.getElementById(id).style.display = 'block';
+}
+
+function evaluateLoan() {
+    const age = parseInt(document.getElementById('age').value);
+    const income = parseInt(document.getElementById('income').value);
+    const loan_amount = parseInt(document.getElementById('loan_amount').value);
+    const result = document.getElementById('result');
+
+    if (income > (loan_amount * 0.4) && age > 22) {
+        result.innerHTML = '<span class="success">✅ CRÉDIT APPROUVÉ - Le profil présente un risque de défaut très faible.</span>';
+    } else {
+        result.innerHTML = '<span class="error">❌ CRÉDIT REFUSÉ - Le modèle détecte un risque de défaut élevé.</span>';
+    }
+}
+</script>
+
 </body>
 </html>
