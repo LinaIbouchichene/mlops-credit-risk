@@ -2,15 +2,16 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "aws" ] # Se déclenche dès que tu pousses sur la branche aws
+    branches: [ "aws" ]
 
 env:
   AWS_REGION: eu-west-3
   ECR_REPOSITORY: credit-risk-app
-  ECS_SERVICE: credit-risk-service
+  # ON UTILISE LES NOMS TROUVÉS SUR AWS :
+  ECS_SERVICE: credit-risk-task-service-h80926r6
   ECS_CLUSTER: cluster-credit-risk
   ECS_TASK_DEFINITION: credit-risk-task
-  CONTAINER_NAME: streamlit-container # CORRIGÉ : Nom exact trouvé sur ta console AWS
+  CONTAINER_NAME: streamlit-container
 
 permissions:
   contents: read
@@ -42,10 +43,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # On utilise -f pour pointer le Dockerfile dans le dossier pipeline
-        # Le "." final inclut tout le projet (modèles, appml.py, etc.)
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f pipeline/Dockerfile .
-        
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
