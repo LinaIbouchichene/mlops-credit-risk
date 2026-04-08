@@ -1,6 +1,4 @@
 pandas
 numpy
-scikit-learn
-mlflow
-joblib
-streamlit
+mlflow==3.10.1
+flask
