@@ -1,170 +1,167 @@
-import streamlit as st
-import pandas as pd
-import joblib
-import os
+from flask import Flask, render_template_string, request
 import mlflow
+import joblib
+import numpy as np
 
-# -----------------------------------------------------
-# CONFIGURATION & CONNEXION MLFLOW
-# -----------------------------------------------------
-# On force l'adresse locale pour éviter les erreurs 403/localhost
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+app = Flask(__name__)
 
-def get_mlflow_data():
+import os
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{BASE}/mlflow.db")
+MODEL_PATH = os.getenv("MODEL_PATH", f"{BASE}/mlruns/3/models/m-9a88b116f8274045964b95b50cb04777/artifacts/model.pkl")
+SCALER_PATH = os.getenv("SCALER_PATH", f"{BASE}/models/scaler.joblib")
+
+# Chargement du modèle et du scaler au démarrage
+try:
+    model = joblib.load(MODEL_PATH)
+    scaler = joblib.load(SCALER_PATH)
+    MODEL_LOADED = True
+except Exception as e:
+    MODEL_LOADED = False
+    print(f"Erreur chargement modèle: {e}")
+
+def get_metrics():
     try:
-        # On cherche l'expérience exacte vue sur ta capture
-        experiment = mlflow.get_experiment_by_name("Exp_Decision_Tree")
-        if experiment:
-            # On cherche spécifiquement ton meilleur run "Adjusted"
-            runs = mlflow.search_runs(
-                experiment_ids=[experiment.experiment_id],
-                filter_string="tags.mlflow.runName = 'Decision_Tree_Adjusted'",
-                max_results=1
-            )
-            if not runs.empty:
-                return runs.iloc[0]
-            else:
-                # Fallback : on prend le meilleur recall de l'expérience
-                runs_best = mlflow.search_runs(
-                    experiment_ids=[experiment.experiment_id],
-                    order_by=["metrics.recall DESC"],
-                    max_results=1
-                )
-                return runs_best.iloc[0] if not runs_best.empty else None
-    except Exception as e:
-        return None
-    return None
+        mlflow.set_tracking_uri(MLFLOW_URI)
+        client = mlflow.tracking.MlflowClient()
+        exp = client.get_experiment_by_name("Exp_Decision_Tree")
+        runs = client.search_runs(exp.experiment_id, max_results=1)
+        if runs:
+            m = runs[0].data.metrics
+            return {
+                "recall": round(m.get("recall", 0) * 100, 1),
+                "accuracy": round(m.get("accuracy", 0) * 100, 1)
+            }
+    except:
+        pass
+    return {"recall": "N/A", "accuracy": "N/A"}
 
-# -----------------------------------------------------
-# BRANDING & STYLE (Correction Texte Blanc/Noir)
-# -----------------------------------------------------
-BRAND_PRIMARY = "#004A99"
-BRAND_LIGHT = "#F8F9FA"
+def predict(credit_lines, loan_amt, total_debt, income, years_employed, fico_score):
+    features = np.array([[credit_lines, loan_amt, total_debt, income, years_employed, fico_score]])
+    features_scaled = scaler.transform(features)
+    proba = model.predict_proba(features_scaled)[0][1]
+    prediction = int(proba >= 0.5)
+    return prediction, round(proba * 100, 1)
 
-st.set_page_config(page_title="Credit Risk Intelligence", layout="wide")
-
-def inject_custom_css():
-    css = f"""
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Credit Risk Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-    /* Fond de l'application */
-    .stApp {{ background-color: {BRAND_LIGHT} !important; }}
-    
-    /* Force le texte en noir pour contrer le Dark Mode du navigateur */
-    html, body, [data-testid="stWidgetLabel"], .stMarkdown, p, h1, h2, h3, h4, h5, h6, li {{
-        color: #1A1A1A !important;
-    }}
-
-    /* Cartes de métriques */
-    .metric-card {{
-        background: white !important;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid {BRAND_PRIMARY};
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }}
-    
-    /* Style des boutons de la sidebar */
-    .stButton>button {{
-        width: 100%;
-        border-radius: 5px;
-    }}
+        body { background-color: #f8f9fa; }
+        .metric-val { font-size: 2rem; font-weight: 700; }
+        .card { border: none; border-radius: 12px; }
+        .badge-model { background: #0d6efd22; color: #0d6efd; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; }
+        .result-box { border-radius: 12px; font-size: 1.1rem; font-weight: 600; }
     </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
+</head>
+<body class="container py-5" style="max-width: 860px;">
 
-inject_custom_css()
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="mb-0 fw-bold">Credit Risk Dashboard</h2>
+            <span class="badge-model mt-1 d-inline-block">Decision Tree — Meilleur modèle</span>
+        </div>
+    </div>
 
-# -----------------------------------------------------
-# NAVIGATION
-# -----------------------------------------------------
-if "stage" not in st.session_state:
-    st.session_state.stage = "intro"
+    <!-- Métriques -->
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <div class="card p-4 shadow-sm text-center">
+                <div class="text-muted small mb-1">Accuracy</div>
+                <div class="metric-val text-primary">{{ metrics.accuracy }}%</div>
+                <div class="progress mt-2" style="height:6px;">
+                    <div class="progress-bar bg-primary" style="width: {{ metrics.accuracy }}%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card p-4 shadow-sm text-center">
+                <div class="text-muted small mb-1">Recall</div>
+                <div class="metric-val text-success">{{ metrics.recall }}%</div>
+                <div class="progress mt-2" style="height:6px;">
+                    <div class="progress-bar bg-success" style="width: {{ metrics.recall }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-with st.sidebar:
-    st.title("🏦 Menu Banque")
-    if st.button("🏠 Accueil"): st.session_state.stage = "intro"
-    if st.button("📊 Performance MLflow"): st.session_state.stage = "metrics"
-    if st.button("🔮 Simulateur de Crédit"): st.session_state.stage = "predict"
-    st.markdown("---")
-    st.caption("Projet MLOps - 2026")
+    <!-- Simulateur -->
+    <div class="card p-4 shadow-sm">
+        <h5 class="fw-semibold mb-3">Simulateur de risque de crédit</h5>
+        <form method="POST">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Revenu annuel ($)</label>
+                    <input type="number" name="income" class="form-control" placeholder="ex: 50000" value="{{ form.income }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Montant du prêt ($)</label>
+                    <input type="number" name="loan_amt" class="form-control" placeholder="ex: 10000" value="{{ form.loan_amt }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Dette totale ($)</label>
+                    <input type="number" name="total_debt" class="form-control" placeholder="ex: 5000" value="{{ form.total_debt }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Lignes de crédit actives</label>
+                    <input type="number" name="credit_lines" class="form-control" placeholder="ex: 3" value="{{ form.credit_lines }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Années d'emploi</label>
+                    <input type="number" name="years_employed" class="form-control" placeholder="ex: 5" value="{{ form.years_employed }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Score FICO (300–850)</label>
+                    <input type="number" name="fico_score" class="form-control" placeholder="ex: 680" min="300" max="850" value="{{ form.fico_score }}" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3 px-4">Analyser le risque</button>
+        </form>
 
-# -----------------------------------------------------
-# STAGE : INTRO
-# -----------------------------------------------------
-if st.session_state.stage == "intro":
-    st.title("🏦 Intelligence Artificielle - Risque de Crédit")
-    st.markdown("""
-    ### Bienvenue dans l'interface de décision bancaire.
-    Ce projet illustre un cycle **MLOps** complet :
-    * **Exploration :** Analyse des données de crédit.
-    * **Entraînement :** Optimisation d'un Arbre de Décision.
-    * **Tracking :** Suivi des métriques (Recall) avec **MLflow**.
-    * **Déploiement :** Interface Streamlit conteneurisée.
-    """)
-    st.image("https://img.freepik.com/free-vector/digital-economy-abstract-concept-illustration_335657-3972.jpg", width=400)
+        {% if result is not none %}
+        <div class="mt-4 p-3 result-box {{ 'bg-success bg-opacity-10 text-success' if result == 0 else 'bg-danger bg-opacity-10 text-danger' }}">
+            {% if result == 0 %}
+                Credit APPROUVE — Probabilite de defaut : {{ proba }}%
+            {% else %}
+                Credit REFUSE — Probabilite de defaut : {{ proba }}%
+            {% endif %}
+            <div class="progress mt-2" style="height: 8px;">
+                <div class="progress-bar {{ 'bg-success' if result == 0 else 'bg-danger' }}" style="width: {{ proba }}%"></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 
-# -----------------------------------------------------
-# STAGE : METRICS (Connexion Live + Photos)
-# -----------------------------------------------------
-elif st.session_state.stage == "metrics":
-    st.title("📊 Tracking des Performances")
-    
-    # 1. RÉCUPÉRATION LIVE
-    run_data = get_mlflow_data()
-    
-    if run_data is not None:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Recall (Live)", f"{run_data['metrics.recall']:.2%}")
-        with col2:
-            st.metric("Accuracy (Live)", f"{run_data['metrics.accuracy']:.2%}")
-        with col3:
-            st.write("**Run sélectionné :**")
-            st.code(run_data['tags.mlflow.runName'])
-    else:
-        st.warning("⚠️ Mode déconnecté : Impossible de joindre le serveur MLflow (mlflow ui).")
+</body>
+</html>
+"""
 
-    st.markdown("---")
-    
-    # 2. AFFICHAGE DES CAPTURES (BACKUP)
-    st.subheader("📸 Preuves du Dashboard MLflow")
-    
-    # Dictionnaire des images (Vérifie bien que le dossier est 'assets' et l'extension '.png')
-    images = {
-        "Comparaison Accuracy/Recall": "Src/assets/mlflow_1.png",
-        "Détails du modèle ajusté (88%)": "Src/assets/mlflow_2.png",
-        "Paramètres du Decision Tree": "Src/assets/mlflow_3.png"
-    }
+@app.route("/", methods=["GET", "POST"])
+def index():
+    metrics = get_metrics()
+    result = None
+    proba = None
+    form = {"income": "", "loan_amt": "", "total_debt": "", "credit_lines": "", "years_employed": "", "fico_score": ""}
 
-    for title, path in images.items():
-        if os.path.exists(path):
-            st.markdown(f"**{title}**")
-            st.image(path, use_container_width=True)
-        else:
-            st.info(f"💡 Image '{title}' non trouvée dans {path}. (C'est normal si tu ne l'as pas encore ajoutée au dossier assets).")
+    if request.method == "POST":
+        form = {k: request.form.get(k, "") for k in form}
+        if MODEL_LOADED:
+            result, proba = predict(
+                float(form["credit_lines"]),
+                float(form["loan_amt"]),
+                float(form["total_debt"]),
+                float(form["income"]),
+                float(form["years_employed"]),
+                float(form["fico_score"])
+            )
 
-# -----------------------------------------------------
-# STAGE : PREDICT (Simulateur)
-# -----------------------------------------------------
-elif st.session_state.stage == "predict":
-    st.title("🔮 Analyse de Risque en Temps Réel")
-    
-    with st.form("loan_form"):
-        col1, col2 = st.columns(2)
-        age = col1.number_input("Âge du client", 18, 95, 35)
-        income = col2.number_input("Revenu Annuel (€)", 0, 1000000, 45000)
-        loan_amount = col1.number_input("Montant du prêt (€)", 0, 500000, 15000)
-        loan_intent = col2.selectbox("Objectif", ["Personnel", "Éducation", "Médical", "Entreprise", "Amélioration Habitat"])
-        
-        submitted = st.form_submit_button("Lancer l'évaluation")
-        
-        if submitted:
-            # Simulation de la logique du modèle Decision Tree
-            # (Dans un vrai projet, on ferait model.predict ici)
-            if income > (loan_amount * 0.4) and age > 22:
-                st.balloons()
-                st.success("✅ CRÉDIT APPROUVÉ - Le profil présente un risque de défaut très faible.")
-            else:
-                st.error("❌ CRÉDIT REFUSÉ - Le modèle détecte un risque de défaut élevé.")
+    return render_template_string(HTML_TEMPLATE, metrics=metrics, result=result, proba=proba, form=form)
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 5001))
+    app.run(host="0.0.0.0", port=port)
