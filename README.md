@@ -1,7 +1,5 @@
 # Projet MLOps - Credit Risk
 
-# ML Ops: Credit Risk Assessment 🚀
-
 Ce projet met en œuvre un pipeline MLOps complet pour l'évaluation du risque de crédit. L'objectif est d'automatiser le cycle de vie d'un modèle de Machine Learning, de l'entraînement au déploiement continu (CI/CD) sur AWS.
 
 ## 📋 Aperçu du Projet
