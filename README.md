@@ -34,13 +34,18 @@ Il permet de transformer un modèle ML classique en une solution industrialisée
 ├── .github/workflows/ # CI/CD GitHub Actions
 
 ├── mlops-credit-risk/ # Code principal du projet
+
 ├── Model_ML.py # Entraînement des modèles
+
 ├── Model_save.py # Sauvegarde des modèles
+
 ├── Project_MLOPS.py # Pipeline principal
+
 ├── requirements.txt # Dépendances
+
 └── README.md
 
----
+
 
 ##  Technologies utilisées
 
