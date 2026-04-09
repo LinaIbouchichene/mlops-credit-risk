@@ -29,5 +29,4 @@ Actuellement, nous testons trois architectures :
 * **MLflow requis :** Tout entraînement doit être loggué pour garantir la reproductibilité.
 
 ---
-🚀 *Une fois le modèle validé ici, effectuez une Pull Request vers `main` pour déclencher le déploiement automatique sur AWS.*
 
