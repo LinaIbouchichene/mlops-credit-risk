@@ -1,5 +1,12 @@
 # Projet MLOps - Credit Risk
 
+
+<img width="706" height="288" alt="image" src="https://github.com/user-attachments/assets/aff5f2cc-29cd-469f-a8b2-a260ab7f58a8" />
+
+
+
+
+
 ## Description du projet
 
 Ce projet est un pipeline complet de **Machine Learning Operations (MLOps)** pour la prédiction du **risque de crédit** des clients.
