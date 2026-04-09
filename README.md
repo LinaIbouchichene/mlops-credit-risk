@@ -1,30 +1,94 @@
 # Projet MLOps - Credit Risk
 
-Ce projet met en œuvre un pipeline MLOps complet pour l'évaluation du risque de crédit. L'objectif est d'automatiser le cycle de vie d'un modèle de Machine Learning, de l'entraînement au déploiement continu (CI/CD) sur AWS.
+## Description du projet
 
-## 📋 Aperçu du Projet
+Ce projet est un pipeline complet de **Machine Learning Operations (MLOps)** pour la prédiction du **risque de crédit** des clients.
 
-L'application prédit la probabilité de défaut de paiement d'un client en fonction de son profil financier. Elle utilise des pratiques DevOps appliquées au ML pour garantir la reproductibilité et la stabilité du modèle.
+Il permet de transformer un modèle ML classique en une solution industrialisée incluant :
+- Préparation des données
+- Entraînement de modèles
+- Suivi des expériences (MLflow)
+- Sauvegarde des modèles
+- Automatisation CI/CD (GitHub Actions)
+- Déploiement (Docker / AWS)
 
-## 🛠️ Stack Technique
+# Objectifs
 
-* **Langage :** Python 3.x
-* **Machine Learning :** Scikit-learn, Pandas, NumPy
-* **Conteneurisation :** Docker
-* **CI/CD :** GitHub Actions
-* **Cloud (AWS) :**
-    * **ECR :** Stockage des images Docker.
-    * **EC2 :** Hébergement de l'application en production.
-* **Versionnage :** Git
+- Analyser et préparer les données
+- Construire plusieurs modèles de machine learning
+- Comparer les performances des modèles
+- Automatiser le pipeline ML
+- Suivre les expériences avec MLflow
+- Déployer le modèle en production
 
-## 📂 Structure du Dossier .github/workflows
+## Modèles utilisés
 
-Le projet utilise GitHub Actions pour automatiser les tâches :
-* `ci-cd.yml` : Gère les tests et l'intégration continue.
-* `aws.yml` : Gère le déploiement automatique sur l'infrastructure AWS (ECR/EC2).
+- Logistic Regression  
+- Decision Tree  
+- Random Forest  
 
-## 🚀 Installation Locale
+  Objectif : comparer les performances et sélectionner le meilleur modèle.
 
+##  Structure du projet
+
+├── .github/workflows/ # CI/CD GitHub Actions
+├── mlops-credit-risk/ # Code principal du projet
+├── Model_ML.py # Entraînement des modèles
+├── Model_save.py # Sauvegarde des modèles
+├── Project_MLOPS.py # Pipeline principal
+├── requirements.txt # Dépendances
+└── README.md
+
+---
+
+##  Technologies utilisées
+
+- Python  
+- Scikit-learn  
+- Pandas / NumPy 
+- MLflow 
+- Docker 
+- GitHub Actions  
+- AWS 
+- Streamlit
+
+- ## Pipeline MLOps
+
+Le pipeline suit les étapes suivantes :  Data => Preprocessing => Training => Evaluation => Tracking =>  Deployment
+
+## MLflow
+
+MLflow est utilisé pour :
+- suivre les expériences
+- comparer les modèles
+- enregistrer les métriques
+- sauvegarder les modèles entraînés
+
+
+## Docker
+
+Le projet est conteneurisé avec Docker afin de garantir :
+- reproductibilité
+- portabilité
+- facilité de déploiement
+
+
+##  CI/CD (GitHub Actions)
+
+Un workflow CI/CD est configuré pour :
+- automatiser l’exécution du pipeline
+- tester le code
+- assurer l’intégration continue
+
+## Déploiement
+
+Le projet peut être déployé :
+- en local
+- avec Docker
+- sur AWS
+
+
+ 
 1. **Cloner le dépôt :**
    ```bash
    git clone [https://github.com/LinaIbouchichene/mlops-credit-risk.git](https://github.com/LinaIbouchichene/mlops-credit-risk.git)
