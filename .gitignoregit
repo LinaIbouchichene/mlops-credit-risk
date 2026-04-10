@@ -1,0 +1,12 @@
+__pycache__/ add .gitignore
+.venv
+venv
+__pycache__
+.git
+.venv
+venv
+env
+.git
+.ipynb_checkpoints
+__pycache__
+*.pyc
