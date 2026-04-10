@@ -2,31 +2,24 @@ from flask import Flask, render_template_string, request
 import mlflow
 import joblib
 import numpy as np
-import os
 
 app = Flask(__name__)
 
-# --- SECTION CORRIGÉE POUR LES CHEMINS ---
-# On définit BASE pour remonter à la racine du projet (/app dans Docker)
+import os
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# On utilise le dossier 'models' visible sur ta capture d'écran
-MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{os.path.join(BASE, 'mlflow.db')}")
-
-# ATTENTION : Vérifie que le nom du fichier est bien 'Decision_Tree_model.joblib' dans ton dossier models
-MODEL_PATH = os.getenv("MODEL_PATH", os.path.join(BASE, "models", "Decision_Tree_model.joblib"))
-SCALER_PATH = os.getenv("SCALER_PATH", os.path.join(BASE, "models", "scaler.joblib"))
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{BASE}/mlflow.db")
+MODEL_PATH = os.getenv("MODEL_PATH", f"{BASE}/mlruns/3/models/m-9a88b116f8274045964b95b50cb04777/artifacts/model.pkl")
+SCALER_PATH = os.getenv("SCALER_PATH", f"{BASE}/models/scaler.joblib")
 
 # Chargement du modèle et du scaler au démarrage
 try:
     model = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
     MODEL_LOADED = True
-    print(f"✅ Modèle chargé avec succès : {MODEL_PATH}")
 except Exception as e:
     MODEL_LOADED = False
-    print(f"❌ Erreur chargement modèle: {e}")
-# --- FIN DE LA SECTION CORRIGÉE ---
+    print(f"Erreur chargement modèle: {e}")
 
 def get_metrics():
     try:
@@ -75,6 +68,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- Métriques -->
     <div class="row g-3 mb-4">
         <div class="col-6">
             <div class="card p-4 shadow-sm text-center">
@@ -96,6 +90,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- Simulateur -->
     <div class="card p-4 shadow-sm">
         <h5 class="fw-semibold mb-3">Simulateur de risque de crédit</h5>
         <form method="POST">
@@ -150,24 +145,3 @@ HTML_TEMPLATE = """
 def index():
     metrics = get_metrics()
     result = None
-    proba = None
-    form = {"income": "", "loan_amt": "", "total_debt": "", "credit_lines": "", "years_employed": "", "fico_score": ""}
-
-    if request.method == "POST":
-        form = {k: request.form.get(k, "") for k in form}
-        if MODEL_LOADED:
-            result, proba = predict(
-                float(form["credit_lines"]),
-                float(form["loan_amt"]),
-                float(form["total_debt"]),
-                float(form["income"]),
-                float(form["years_employed"]),
-                float(form["fico_score"])
-            )
-
-    return render_template_string(HTML_TEMPLATE, metrics=metrics, result=result, proba=proba, form=form)
-
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5001))
-    app.run(host="0.0.0.0", port=port)
-    
